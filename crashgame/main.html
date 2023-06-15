@@ -1,0 +1,289 @@
+<html>
+    <head>
+        <title>Crash Game</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+        <style>
+        body {
+            background-color: #220066;
+            font-family: "Montserrat", Arial, sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 80px;
+        }
+
+        button {
+  padding: 4% 11%;
+  font-size: 16px;
+  border: none;
+  border-radius: 15px;
+  background-color:  #27a329;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 20px;
+  transition: background-color 0.3s ease;
+  margin-bottom: 10px;
+}
+
+button:hover {
+  background-color: #258f26;
+}
+.modern-input {
+  padding: 3% 5%;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+  color: #333333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modern-input::placeholder {
+  color: #999999;
+}
+
+.modern-input:hover {
+  background-color: #eeeeee;
+}
+
+.modern-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#wholeInterface{
+  width: 60%;
+  height: 60%;
+  border: solid 3px black;
+  border-radius: 25px;
+  display: flex;
+  flex-direction: row;
+}
+#leftSide{
+  border-radius: 20px;
+  width: 30%;
+  height: 100%;
+  border-right: solid 3px black;
+  border-top: solid 1px black;
+}
+#multiplierValue{
+  text-align: center;
+  margin-bottom: 5%;
+}
+#textContainer{
+  border-bottom: solid 3px black;
+}
+#rightSide{
+  width: 70%;
+  height: 100%;
+  border: solid 3px black;
+  border-top: solid 1px black;
+  border-radius: 20px;
+}
+          </style>
+    </head>
+    <body>
+      <div id="wholeInterface">
+        <div id="leftSide">
+          <div id="textContainer">
+            <p style="font-size: 26px;text-align: center;margin-bottom: -10%;">CURRENT MULTIPLIER : </p>
+            <h1 id="multiplierValue">1.00x</h1>
+          </div>
+          <div id="bettingSettings">
+            <p style="font-size: 26px;text-align: center;">BET AMOUNT : </p>
+            <input id="betAmount" style="margin-left: 17%;" class="modern-input"/>
+            <p style="font-size: 26px;text-align: center;">AUTO CASHOUT AT :</p>
+            <input id="autoCashOut" class="modern-input" style="margin-left: 17%;"/>
+            <button id="startButton" style="margin-left: 23%; margin-top: 10%;">PLACE BET</button>
+          </div>
+        </div>
+        <div id="rightSide">
+          <canvas id="myChart" width="90%" height="80%" aria-label="Hello ARIA World" role="img"></canvas>
+        </div>
+      </div>
+          
+        <script>
+var multiplierElement = document.getElementById("multiplierValue");
+var time = 0;
+var initialMultiplier = 1; // Initial multiplier value
+var growthRate = 0.1; // Growth rate value
+var multiplier = calculateMultiplier(initialMultiplier, growthRate, time); // Initialize multiplier
+var intervalId;
+var crashed = false; 
+var balance = 0; // User's balance
+var triggered=false;
+var autoCashOutInput = document.getElementById("autoCashOut");
+const ctx = document.getElementById('myChart');
+var tineInt = 0;
+var secsPassed = 1;
+var contorSecs = 0;
+var labels = ["0s"];
+    var data = ["1"];
+    var chart = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: false,
+        data: data,
+        borderColor: "#ffffff",
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+      },
+    ],
+  },
+  options: {
+    plugins: {
+        legend: {
+            display: false
+        }
+    },
+    scales: {
+      y:
+        {
+          ticks: {
+            beginAtZero: true,
+          },
+        },
+      x: {
+        maxTicksLimit: 10,
+      },
+    },
+  },
+});
+    function updateChartData(multiplierStr,time) {
+      // Get the new data from input fields or other sources
+
+      // Update the chart data
+      chart.data.labels.push(time);
+      chart.data.datasets[0].data.push(multiplierStr);
+      chart.update(); // Update the chart
+    }
+function calculateMultiplier(initial, rate, time) {
+  return initial * Math.exp(rate * time);
+}
+function simulateCrash() {
+  var random = Math.random();
+  if (random < 0.0000002 || multiplier >= autoCashOutValue) {
+    clearInterval(intervalId);
+    if (multiplier >= autoCashOutValue) {
+      // Perform the transaction for automatic cash out here 
+      console.log("Auto cash out");
+      multiplierElement.style.color = "green"; 
+      document.getElementById("autoCashOut").readOnly = false;
+      multiplier = 1;
+      
+    } else {
+      multiplierElement.style.color = "red"; 
+      console.log("crashed");
+      crashed = true;// Set text color to red for crash
+    }
+    
+    
+    startButton.textContent = "PLACE BET";
+    document.getElementById("betAmount").readOnly = false;
+    console.log((multiplier - 0.01).toFixed(2));
+    stopMultiplier();
+    time = 0;
+    triggered=true;
+    multiplier = 1;
+    return;
+  }
+  if(!triggered){
+    multiplierElement.textContent = multiplier.toFixed(2) + "x";
+  time += 0.1;
+  contorSecs++;
+  if(contorSecs === 10){
+    contorSecs = 0;
+    updateChartData(multiplier.toFixed(2),JSON.stringify(secsPassed) + 's');
+    secsPassed++;
+  }
+  prevMultiplier = multiplier; // Store the current multiplier as the previous multiplier
+  multiplier = calculateMultiplier(initialMultiplier, growthRate, time);
+  var multiplierStr = JSON.stringify(multiplier.toFixed(2));
+  }else{
+    multiplier = calculateMultiplier(initialMultiplier, growthRate, 0);
+    time = 0;
+    triggered = false;
+  }
+}
+
+function updateMultiplier() {
+      simulateCrash();
+  }
+  function toggleGame() {
+  var betAmountInput = document.getElementById("betAmount");
+  var autoCashOutInput = document.getElementById("autoCashOut");
+  
+  if (/^[0-9]+(\.[0-9]+)?$/.test(betAmountInput.value) && !(betAmountInput.value < 0.5)) {
+    multiplierElement.style.color = "white";
+    betAmountInput.readOnly = false;
+
+    if (isNaN(autoCashOutInput.value) || autoCashOutInput.value <= 1) {
+      alert("Please enter a valid auto cash out value greater than 1.");
+      return;
+    }
+    
+    autoCashOutValue = parseFloat(autoCashOutInput.value);
+    
+    if (isNaN(autoCashOutValue) || autoCashOutValue <= 1) {
+      alert("Please enter a valid auto cash out value greater than 1.");
+      return;
+    }
+    
+    if (!intervalId) {
+      autoCashOutInput.readOnly = true; // Prevent changes during game
+      
+      if (crashed) {
+        time = 0;
+        multiplier = initialMultiplier;
+        multiplierElement.textContent = initialMultiplier.toFixed(2) + "x";
+        crashed = false;
+      }
+      intervalId = setInterval(updateMultiplier, 100);
+      startButton.textContent = "CASH OUT";
+      multiplierElement.style.color = "white";
+      betAmountInput.readOnly = true;
+      
+    } else {
+      clearInterval(intervalId);
+      intervalId = null;
+      
+      if (!crashed) {
+        var payout = balance * multiplier;
+        balance += payout;
+        multiplierElement.style.color = "green";
+        console.log((multiplier - 0.01).toFixed(2));
+        console.log("stopped, withdrew");
+        multiplier = 1;
+        // Perform the transaction for cashing out here
+      }
+      
+      time = 0;
+      startButton.textContent = "PLACE BET";
+      autoCashOutInput.readOnly = false; // Enable changes after game ends
+    }
+  } else {
+    alert("Please enter a valid bet amount and value autocashout will trigger.");
+  }
+}
+
+function stopMultiplier() {
+  clearInterval(intervalId);
+  intervalId = null;
+}
+document.getElementById("startButton").addEventListener("click", toggleGame);
+        </script>
+    </body>
+</html>
